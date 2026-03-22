@@ -4,6 +4,8 @@
 
 This software, including all programs, computer files, and associated documentation, are Copyright (c) 2002, 2011, 2018, 2019 David C A Croft. All rights reserved.
 
+Modifications and enhancements are Copyright (c) 2026 Patrick Lewis. All rights reserved.
+
 ## DISCLAIMER
 
 This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
