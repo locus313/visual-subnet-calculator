@@ -11,6 +11,7 @@ Originally based on the calculator at http://www.davidc.net/sites/default/subnet
 - Toggle individual columns on/off
 - Shareable/bookmarkable URLs — full calculator state is encoded in the query string
 - No build step, no dependencies — plain HTML and JavaScript
+- Modern dark UI with responsive layout
 
 ## Usage
 
