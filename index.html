@@ -9,6 +9,7 @@
 
 var visibleColumns = {
   subnet: true,
+  label: true,
   netmask: false,
   range: true,
   useable: true,
@@ -19,6 +20,7 @@ var visibleColumns = {
 
 var curNetwork = 0;
 var curMask = 0;
+var subnetLabels = {};
 
 function updateNetwork()
 {
@@ -66,6 +68,7 @@ function updateNetwork()
 function startOver()
 {
   rootSubnet = [0, 0, null];
+  subnetLabels = {};
 
   recreateTables();
 }
@@ -96,10 +99,18 @@ function recreateTables()
   document.getElementById('joinHeader').colSpan = (rootSubnet[0] > 0 ? rootSubnet[0] : 1);
 //  document.getElementById('col_join').span = (rootSubnet[0] > 0 ? rootSubnet[0] : 1);
 
-  /* Create the bookmark hyperlink */
+  updateSaveLink();
+}
+
+function updateSaveLink()
+{
   var link = document.getElementById('saveLink');
   if (link) {
-    link.href = 'index.html?network='+inet_ntoa(curNetwork)+'&mask='+curMask+'&division='+binToAscii(nodeToString(rootSubnet));
+    var href = 'index.html?network='+inet_ntoa(curNetwork)+'&mask='+curMask+'&division='+binToAscii(nodeToString(rootSubnet));
+    if (Object.keys(subnetLabels).length > 0) {
+      href += '&labels=' + encodeURIComponent(JSON.stringify(subnetLabels));
+    }
+    link.href = href;
   }
 }
 
@@ -174,6 +185,30 @@ function createRow(calcbody, node, address, mask, labels, depth)
     if (visibleColumns.subnet) {
       var newCell = document.createElement('TD');
       newCell.appendChild(document.createTextNode(inet_ntoa(address)+'/'+mask));
+      newRow.appendChild(newCell);
+    }
+
+    /* label */
+    if (visibleColumns.label) {
+      var labelKey = inet_ntoa(address) + '/' + mask;
+      var newCell = document.createElement('TD');
+      var labelInput = document.createElement('INPUT');
+      labelInput.type = 'text';
+      labelInput.className = 'label-input';
+      labelInput.placeholder = 'Add label\u2026';
+      labelInput.value = subnetLabels[labelKey] || '';
+      labelInput.setAttribute('data-key', labelKey);
+      labelInput.oninput = (function(key) {
+        return function() {
+          if (this.value) {
+            subnetLabels[key] = this.value;
+          } else {
+            delete subnetLabels[key];
+          }
+          updateSaveLink();
+        };
+      })(labelKey);
+      newCell.appendChild(labelInput);
       newRow.appendChild(newCell);
     }
 
@@ -415,6 +450,9 @@ function calcOnLoad()
     rootSubnet = [0, 0, null];
     if (division != '0') {
       loadNode(rootSubnet, division);
+    }
+    if (args['labels']) {
+      try { subnetLabels = JSON.parse(args['labels']); } catch(e) { subnetLabels = {}; }
     }
     recreateTables();
   }
@@ -747,6 +785,23 @@ input[name="netbits"] { width: 46px; text-align: center; }
   display: block;
   filter: invert(1) opacity(0.85);
 }
+
+.label-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  color: var(--text);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.82rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  width: 100%;
+  min-width: 120px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.label-input:hover { border-color: var(--border); }
+.label-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+.label-input::placeholder { color: var(--text-muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -778,6 +833,7 @@ input[name="netbits"] { width: 46px; text-align: center; }
     <div class="columns-row">
       <span class="columns-label">Columns:</span>
       <label class="toggle-chip"><input type="checkbox" id="cb_subnet" checked onclick="toggleColumn(this)"> Subnet</label>
+      <label class="toggle-chip"><input type="checkbox" id="cb_label" checked onclick="toggleColumn(this)"> Label</label>
       <label class="toggle-chip"><input type="checkbox" id="cb_netmask" onclick="toggleColumn(this)"> Netmask</label>
       <label class="toggle-chip"><input type="checkbox" id="cb_range" checked onclick="toggleColumn(this)"> Range</label>
       <label class="toggle-chip"><input type="checkbox" id="cb_useable" checked onclick="toggleColumn(this)"> Useable IPs</label>
@@ -797,6 +853,7 @@ input[name="netbits"] { width: 46px; text-align: center; }
     <thead>
       <tr>
         <th id="subnetHeader">Subnet address</th>
+        <th id="labelHeader">Label</th>
         <th id="netmaskHeader">Netmask</th>
         <th id="rangeHeader">Range of addresses</th>
         <th id="useableHeader">Useable IPs</th>
